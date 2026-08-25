@@ -26,7 +26,7 @@ jobs:
             echo "===== Starting Backend Deployment ====="
 
             # Go to backend project
-            cd /root/Java-springboot-project/backend
+            cd /home/ec2-user/Java-springboot-project/backend
 
             echo "===== Pulling latest code ====="
 
