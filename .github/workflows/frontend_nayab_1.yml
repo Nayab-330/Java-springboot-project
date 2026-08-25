@@ -1,0 +1,61 @@
+name: Frontend CI/CD
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:
+jobs:
+
+  deploy-frontend:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Deploy Frontend to EC2
+        uses: appleboy/ssh-action@v1.2.2
+
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+
+            set -e
+
+            echo "===== Starting Frontend Deployment ====="
+
+            echo "===== Current User ====="
+            whoami
+
+            echo "===== Moving to Frontend Directory ====="
+            cd /home/ec2-user/Java-springboot-project/frontend
+
+            echo "===== Pulling Latest Code ====="
+            git pull origin main
+
+            echo "===== Building Frontend Docker Image ====="
+            docker build -t frontend-app:latest .
+
+            echo "===== Stopping Old Frontend Container ====="
+            docker stop frontend-app || true
+
+            echo "===== Removing Old Frontend Container ====="
+            docker rm frontend-app || true
+
+            echo "===== Starting New Frontend Container ====="
+
+            docker run -d \
+              --name frontend-app \
+              -p 8502:8501 \
+              frontend-app:latest
+
+            echo "===== Deployment Completed ====="
+
+            echo "===== Running Containers ====="
+            docker ps
+
+            echo "===== Frontend Logs ====="
+            docker logs --tail 20 frontend-app
