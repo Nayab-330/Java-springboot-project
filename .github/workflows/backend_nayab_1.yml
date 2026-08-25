@@ -1,0 +1,62 @@
+name: Backend CI/CD
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:
+jobs:
+
+  deploy-backend:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Connect to EC2 and deploy
+      - name: Deploy Backend to EC2
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+
+            echo "===== Starting Backend Deployment ====="
+
+            # Go to backend project
+            cd /root/Java-springboot-project/backend
+
+            echo "===== Pulling latest code ====="
+
+            git pull origin main
+
+            echo "===== Building Docker image ====="
+
+            docker build -t backend-app:latest .
+
+            echo "===== Stopping old container ====="
+
+            docker stop backend-app || true
+
+            echo "===== Removing old container ====="
+
+            docker rm backend-app || true
+
+            echo "===== Starting new container ====="
+
+            docker run -d \
+              --name backend-app \
+              -p 8005:8084 \
+              backend-app:latest
+
+            echo "===== Deployment completed ====="
+
+            echo "===== Running containers ====="
+
+            docker ps
+
+            echo "===== Recent application logs ====="
+
+            docker logs --tail 20 backend-app
